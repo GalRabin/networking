@@ -1,14 +1,12 @@
 package labnew;
-
-
 import java.io.*;
-import java.net.HttpURLConnection;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class IdcDm {
-        public static void main(String[] args) {
+        public static void main(String[] args) throws InterruptedException {
         // Parsing given arguments
         List<String> mirrors = new ArrayList<String>();
         int workers = 1;
@@ -34,56 +32,52 @@ public class IdcDm {
 
         // Check if download has stop
         DivideManager divider = null;
-
         String serialFileName = String.format("%s.tmp", fileName);
         // Deserialize object if exists and valid structure
         if (new File(serialFileName).isFile()){
-           divider = deSerializeObject(serialFileName, workers, mirrors);
+           divider = Helpers.deSerializeObject(serialFileName);
+           divider.re_divide(workers, mirrors);
         }
-
         // Serialized object if unable to recover or download didn't started yet
         if (divider == null){
-            divider = serializeObject(serialFileName, fileSize, workers, mirrors);
+            divider = Helpers.serializeObject(new DivideManager(fileSize), serialFileName);
+            divider.divide(workers, mirrors);
+            Helpers.serializeObject(divider, serialFileName);
         }
 
-
-
-
-    }
-
-    public static DivideManager deSerializeObject(String fileName, int workers, List<String> mirrors){
-        DivideManager divider = null;
+        // Create shared object for writing the file
+        RandomAccessFile downloadedFile = null;
         try {
-            FileInputStream fileIn = new FileInputStream(fileName);
-            ObjectInputStream in = new ObjectInputStream(fileIn);
-            divider = (DivideManager) in.readObject();
-            in.close();
-            fileIn.close();
-            divider.re_divide(workers, mirrors);
-        } catch (IOException i) {
-            i.printStackTrace();
-        } catch (ClassNotFoundException c) {
-            System.out.println("Employee class not found");
-            c.printStackTrace();
+            downloadedFile = new RandomAccessFile(fileName, "rwd");
+        } catch (FileNotFoundException e) {
+            System.err.println("Unable to write to file system - Please check permissions !!!");
         }
 
-        return divider;
-    }
 
-    public static DivideManager serializeObject(String fileName, long fileSize, int workers, List<String> mirrors){
-        DivideManager divider = null;
-        try {
-            divider = new DivideManager(fileSize, workers, mirrors);
-            divider.chunks.get(1).add_byte(40000);
-            FileOutputStream fileOut = new FileOutputStream(fileName);
-            ObjectOutputStream out = new ObjectOutputStream(fileOut);
-            out.writeObject(divider);
-            out.close();
-            fileOut.close();
-        } catch (IOException i) {
-            i.printStackTrace();
+        ExecutorService pool = Executors.newFixedThreadPool(workers);
+        int workerID = 0;
+        for (ChunkBytes chunk : divider.chunks) {
+            String bytesRange = String.format("Bytes=%d-%d", chunk.get_startByte(), chunk.get_endByte());
+            System.out.println(String.format("[%d] Start downloading range %s from:", workerID, bytesRange));
+            System.out.println(chunk.get_mirror());
+            DownloadWorker newWorker = new DownloadWorker(chunk, downloadedFile, divider, workerID);
+            pool.execute(newWorker);
+            workerID++;
         }
+        pool.shutdown();
 
-        return divider;
+        // Print percentage until termination
+        boolean poolState = pool.isTerminated();
+        while (!poolState){
+            int percentage = divider.getPercentage();
+            if (percentage != -1){
+                System.out.println("Downloaded " + percentage + "%");
+                Helpers.serializeObject(divider,serialFileName);
+            }
+            Thread.sleep(50);
+            poolState = pool.isTerminated();
+        }
+        System.out.println("Downloaded 100%");
+        System.out.println("Download succeeded");
     }
 }

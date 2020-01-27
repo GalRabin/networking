@@ -7,29 +7,38 @@ import java.util.List;
 public class DivideManager implements Serializable {
     public List<ChunkBytes> chunks;
 
-    private long _fileSize;
+    private long fileSize;
     public long bytesDownloaded = 0;
-    public int bytesPercentage = 0;
+    public int bytesPercentage = -1;
 
-    public DivideManager(long fileSize, int workers, List<String> mirrors){
-        _fileSize = fileSize;
-        int[] workersPerMirror = split_worker_mirrors(mirrors.size(), workers);
-        long[] rangeBytes = range_bytes(0, fileSize, workers);
-        chunks = build_chunks(mirrors, workersPerMirror, rangeBytes);
+    public DivideManager(long fileSize){
+        this.fileSize = fileSize;
     }
 
-    public long getBytesDownloaded() {
-        return bytesDownloaded;
-    }
-
-    public long get_fileSize() {
-        return _fileSize;
-    }
 
     public long get_remainToDownload() {
-        return get_fileSize() - getBytesDownloaded();
+        return this.fileSize - this.bytesDownloaded;
     }
 
+    public int getPercentage(){
+        int newPercentage = (int)(((double)bytesDownloaded / fileSize) * 100);
+        if (newPercentage != bytesPercentage && newPercentage != 100){
+            bytesPercentage = newPercentage;
+            return  bytesPercentage;
+        }
+        return -1;
+
+    }
+
+    public void addDownloadedBytes(long bytes){
+        bytesDownloaded += bytes;
+    }
+
+    public void divide(int workers, List<String> mirrors){
+        int[] workersPerMirror = split_worker_mirrors(mirrors.size(), workers);
+        long[] rangeBytes = range_bytes(0, this.fileSize, workers);
+        chunks = build_chunks_divide(mirrors, workersPerMirror, rangeBytes);
+    }
 
     public void re_divide(int workers, List<String> mirrors){
         // Split remain data by workers
@@ -74,7 +83,7 @@ public class DivideManager implements Serializable {
         chunks = newChunks;
     }
 
-    public List<ChunkBytes> build_chunks(List<String> mirrors , int[] workersPerMirror, long[] rangeBytes){
+    public List<ChunkBytes> build_chunks_divide(List<String> mirrors , int[] workersPerMirror, long[] rangeBytes){
         chunks = new ArrayList<ChunkBytes>();
         int curMirror = 0;
         for (int i = 0; i < rangeBytes.length - 1; i++) {

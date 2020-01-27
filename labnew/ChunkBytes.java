@@ -3,31 +3,38 @@ package labnew;
 import java.io.Serializable;
 
 public class ChunkBytes implements Serializable {
-    public String _mirror;
-    public long _startByte;
-    public long _endByte;
-    public long _currentByte = -1;
+    private String mirror;
+    private long startByte;
+    private long endByte;
+    private long currentByte = -1;
 
     public ChunkBytes(String mirror, long startByte, long endByte){
-         this._startByte = startByte;
-         this._endByte = endByte;
-         this._currentByte += startByte;
-         this._mirror = mirror;
+         this.startByte = startByte;
+         this.endByte = endByte;
+         this.currentByte += startByte;
+         this.mirror = mirror;
     }
 
+    public String get_mirror() {
+        return this.mirror;
+    }
+    public long get_startByte() {
+        return this.startByte;
+    }
     public long get_endByte() {
-        return this._endByte;
+        return this.endByte;
     }
-
-
     public long get_currentByte() {
-        return this._currentByte;
+        return this.currentByte;
     }
 
+    public long get_bytes_downloaded(){
+        return this.endByte - this.startByte;
+    }
     public long get_remain_bytes(){
-        return this._endByte - ((this._currentByte + 1));
+        return this.endByte - ((this.currentByte + 1));
     }
     public void add_byte(long bytes) {
-        this._currentByte += bytes;
+        this.currentByte += bytes;
     }
 }

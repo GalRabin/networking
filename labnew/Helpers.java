@@ -1,7 +1,6 @@
 package labnew;
 
-import java.io.File;
-import java.io.IOException;
+import java.io.*;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLConnection;
@@ -11,6 +10,48 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class Helpers {
+    public static DivideManager deSerializeObject(String fileName){
+        DivideManager divider = null;
+        try {
+            FileInputStream fileIn = new FileInputStream(fileName);
+            ObjectInputStream in = new ObjectInputStream(fileIn);
+            divider = (DivideManager) in.readObject();
+            in.close();
+            fileIn.close();
+        } catch (IOException i) {
+            i.printStackTrace();
+        } catch (ClassNotFoundException c) {
+            System.out.println("Employee class not found");
+            c.printStackTrace();
+        }
+
+        return divider;
+    }
+
+    public static DivideManager serializeObject(DivideManager divider ,String fileName){
+        try {
+            // Writing to temp copy of meta data
+            String fileCopy = String.format("%s.copy", fileName);
+            FileOutputStream fileOut = new FileOutputStream(fileCopy);
+            ObjectOutputStream out = new ObjectOutputStream(fileOut);
+            out.writeObject(divider);
+            out.close();
+            fileOut.close();
+
+            // Rename file
+            File fileCopyObj = new File(fileCopy);
+
+            boolean boolRename = fileCopyObj.renameTo(new File(fileName));
+            boolean boolDelete = fileCopyObj.delete();
+        } catch (IOException i) {
+            i.printStackTrace();
+        }
+
+        return divider;
+    }
+
+
+
     /**
      * Get file size before start downloading
      * @param url url containing the file
