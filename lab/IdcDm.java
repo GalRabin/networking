@@ -53,8 +53,8 @@ public class IdcDm {
                 System.err.println("Unable to serialize DivideManager object - metadata corrupted!!!");
                 divider = null;
             }
-
         }
+        
         // Serialized object if corrupted recover file or download performed for the first time
         if (divider == null) {
             divider = new DivideManager(fileSize);
