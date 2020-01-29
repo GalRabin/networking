@@ -6,9 +6,7 @@ import java.util.List;
 
 public class DivideManager implements Serializable {
     public List<ChunkBytes> chunks;
-
     private long fileSize;
-    public long bytesDownloaded = 0;
     public int bytesPercentage = -1;
 
     public DivideManager(long fileSize){
@@ -16,22 +14,25 @@ public class DivideManager implements Serializable {
     }
 
 
+    public long getBytesDownloaded(){
+        long bytesDownloaded = 0;
+        for (ChunkBytes chunk : chunks){
+            bytesDownloaded += chunk.get_bytes_downloaded();
+        }
+        return bytesDownloaded;
+    }
+
     public long get_remainToDownload() {
-        return this.fileSize - this.bytesDownloaded;
+        return this.fileSize - getBytesDownloaded();
     }
 
     public int getPercentage(){
-        int newPercentage = (int)(((double)bytesDownloaded / fileSize) * 100);
+        int newPercentage = (int)(((double)getBytesDownloaded() / fileSize) * 100);
         if (newPercentage != bytesPercentage && newPercentage != 100){
             bytesPercentage = newPercentage;
             return  bytesPercentage;
         }
         return -1;
-
-    }
-
-    public void addDownloadedBytes(long bytes){
-        bytesDownloaded += bytes;
     }
 
     public void divide(int workers, List<String> mirrors){

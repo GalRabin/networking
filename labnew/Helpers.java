@@ -1,16 +1,16 @@
 package labnew;
 
 import java.io.*;
-import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLConnection;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 public class Helpers {
-    public static DivideManager deSerializeObject(String fileName){
+    public static DivideManager deSerializeObject(String fileName) {
         DivideManager divider = null;
         try {
             FileInputStream fileIn = new FileInputStream(fileName);
@@ -28,7 +28,7 @@ public class Helpers {
         return divider;
     }
 
-    public static DivideManager serializeObject(DivideManager divider ,String fileName){
+    public static DivideManager serializeObject(DivideManager divider, String fileName) {
         try {
             // Writing to temp copy of meta data
             String fileCopy = String.format("%s.copy", fileName);
@@ -50,21 +50,46 @@ public class Helpers {
         return divider;
     }
 
+    static byte[] trim(byte[] bytes) {
+        int i = bytes.length - 1;
+        while (i >= 0 && bytes[i] == 0) {
+            --i;
+        }
+
+        return Arrays.copyOf(bytes, i + 1);
+    }
+
+    public static String executeCommand(String command) {
+        String s = null;
+        try {
+            Process p = Runtime.getRuntime().exec(command);
+            BufferedReader stdInput = new BufferedReader(new InputStreamReader(p.getInputStream()));
+            BufferedReader stdError = new BufferedReader(new InputStreamReader(p.getErrorStream()));
+
+            // read the output from the command
+            s = stdInput.readLine().split("=")[1].replace(" ", "");
+
+        } catch (IOException e) {
+            System.out.println("exception happened - here's what I know: ");
+        }
+
+        return s;
+    }
 
 
     /**
      * Get file size before start downloading
+     *
      * @param url url containing the file
      * @return file size in bytes
      */
-    public static long getFileSizeFromURL(String url){
+    public static long getFileSizeFromURL(String url) {
         long file_size = 0;
         try {
             URLConnection urlConnection = new URL(url).openConnection();
             urlConnection.connect();
             file_size = urlConnection.getContentLengthLong();
-        }
-        catch (IOException e){
+        } catch (IOException e) {
             System.err.println(e);
         }
         return file_size;
@@ -72,26 +97,27 @@ public class Helpers {
 
     /**
      * Get url and return the file which in the end, for example: http://ynet.co.il/index.html --> file is index.html
+     *
      * @param url url as string
      * @return file name
      */
-    public static String getFileNameFromURL(String url){
+    public static String getFileNameFromURL(String url) {
         String[] url_splited = url.split("/");
         return url_splited[url_splited.length - 1];
     }
 
     /**
      * Get file content in to string array by lines
+     *
      * @param file file path
      * @return arrays of strings (each index new line)
      */
-    public static List<String> readFile(String file){
+    public static List<String> readFile(String file) {
         List<String> stringList = new ArrayList<String>();
         try {
             Path filePath = new File(file).toPath();
             stringList = Files.readAllLines(filePath);
-        }
-        catch (IOException  e){
+        } catch (IOException e) {
             System.err.println("Not valid file supplied");
         }
 

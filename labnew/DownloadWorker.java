@@ -3,18 +3,18 @@ package labnew;
 import java.io.*;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.nio.channels.Channels;
-import java.nio.channels.ReadableByteChannel;
-import java.util.zip.GZIPInputStream;
+import java.nio.ByteBuffer;
+import java.nio.channels.FileChannel;
+
 
 
 public class DownloadWorker implements Runnable {
     private ChunkBytes chunk;
-    private RandomAccessFile downloadedFile;
+    private FileChannel downloadedFile;
     private DivideManager divider;
     private int workerID;
 
-    public DownloadWorker(ChunkBytes chunk, RandomAccessFile downloadedFile, DivideManager divider, int workerID) {
+    public DownloadWorker(ChunkBytes chunk, FileChannel downloadedFile, DivideManager divider, int workerID) {
         this.chunk = chunk;
         this.downloadedFile = downloadedFile;
         this.divider = divider;
@@ -33,18 +33,16 @@ public class DownloadWorker implements Runnable {
             InputStream inputStream = urlConnection.getInputStream();
             BufferedInputStream bufferedInputStream = new BufferedInputStream(inputStream);
             while (true) {
-                byte[] temp = new byte[1024];
-                int buffer_len = bufferedInputStream.read(temp);
+                byte[] buffer = new byte[1024];
+                int buffer_len = bufferedInputStream.read(buffer);
                 if (buffer_len == -1) {
                     break;
                 }
-                this.downloadedFile.seek(this.chunk.get_currentByte() +1);
-                this.downloadedFile.write(temp);
+                this.downloadedFile.write(ByteBuffer.wrap(buffer, 0, buffer_len), (int)(this.chunk.get_currentByte() + 1));
                 this.chunk.add_byte(buffer_len);
-                this.divider.addDownloadedBytes(buffer_len);
             }
-
-            System.out.println(String.format("[%d] Finished downloading", this.workerID));
+            bufferedInputStream.close();
+            System.out.println(String.format("%s[%d] Finished downloading%s", ConsoleColors.GREEN_BOLD, this.workerID, ConsoleColors.RESET));
         } catch(IOException e) {
             System.err.println(e);
         }
