@@ -3,65 +3,60 @@ package lab;
 import java.io.*;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.nio.channels.Channels;
-import java.nio.channels.ReadableByteChannel;
-import java.util.zip.GZIPInputStream;
+import java.nio.ByteBuffer;
+import java.nio.channels.FileChannel;
 
-import static lab.Helpers.getFileSizeFromURL;
-
+/**
+ * Runnable thread which perform HTTP range request
+ */
 public class DownloadWorker implements Runnable {
-    private String _mirror;
-    private long _start_byte;
-    private long _end_byte;
-    private FileManager _file_manager;
+    // DownloadWorker shared variables
+    private ChunkBytes chunk;
+    private FileChannel downloadedFile;
+    private int workerID;
+    // BUFFER to read from (will influence on the rhythm of writing the file and percentage shown to the user - if
+    // too big partly percentage will be show, if too little the speed will be slowdown)
+    private int BUFFER_SIZE = 1024;
 
     /**
-     * Request target url with Range method
-     * @param mirror url to download from
-     * @param start_byte starting byte in range
-     * @param end_byte starting byte in range
+     * Constructor to thread of DownloadWorker
+     * @param chunk chunks to be execute
+     * @param downloadedFile file channel that bytes will be write in.
+     * @param workerID worker ID (simply thread ID)
      */
-    public DownloadWorker(String mirror, long start_byte, long end_byte, FileManager file) {
-        _mirror = mirror;
-        _start_byte = start_byte;
-        _end_byte = end_byte;
-        _file_manager = file;
+    public DownloadWorker(ChunkBytes chunk, FileChannel downloadedFile, int workerID) {
+        this.chunk = chunk;
+        this.downloadedFile = downloadedFile;
+        this.workerID = workerID;
     }
 
+    @Override
     public void run() {
         try {
             // Build range request message
-            HttpURLConnection urlConnection = (HttpURLConnection) new URL(_mirror).openConnection();
-            String bytesRange = String.format("Bytes=%d-%d", _start_byte, _end_byte);
-            System.out.println(String.format("Start downloading range %s from:", bytesRange));
-            System.out.println(_mirror);
+            HttpURLConnection urlConnection = (HttpURLConnection) new URL(chunk.getMirror()).openConnection();
+            String bytesRange = String.format("Bytes=%d-%d", this.chunk.getStartByte(), this.chunk.getEndByte());
             urlConnection.setRequestProperty("Range", bytesRange);
             urlConnection.connect();
 
-
-            Reader reader = null;
-            reader = new InputStreamReader(urlConnection.getInputStream());
-            long current_index_in_file = _start_byte;
+            //open the input buffer stream
+            InputStream inputStream = urlConnection.getInputStream();
+            BufferedInputStream bufferedInputStream = new BufferedInputStream(inputStream);
+            // Write to file and read from buffer until no data available in buffer
             while (true) {
-                int current_byte = reader.read();
-                if (current_byte == -1) {
+                byte[] buffer = new byte[BUFFER_SIZE];
+                int buffer_len = bufferedInputStream.read(buffer);
+                if (buffer_len == -1) {
                     break;
                 }
-                _file_manager.writeToFile((byte) current_byte, (int)current_index_in_file);
-                current_index_in_file++;
+                this.downloadedFile.write(ByteBuffer.wrap(buffer, 0, buffer_len), (int)(this.chunk.getCurrentByte() + 1));
+                this.chunk.addByte(buffer_len);
             }
-
-            System.out.println("Finished downloading");
+            // Close buffer to loose resources
+            bufferedInputStream.close();
+            System.out.println(String.format("%s[%d] Finished downloading%s", ConsoleColors.GREEN_BOLD, this.workerID, ConsoleColors.RESET));
         } catch(IOException e) {
             System.err.println(e);
         }
-    }
-
-    public FileManager get_file_manager() {
-        return _file_manager;
-    }
-
-    public void set_file_manager(FileManager _file_manager) {
-        this._file_manager = _file_manager;
     }
 }
