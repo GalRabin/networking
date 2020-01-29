@@ -56,7 +56,7 @@ public class DownloadWorker implements Runnable {
             bufferedInputStream.close();
             System.out.println(String.format("%s[%d] Finished downloading%s", ConsoleColors.GREEN_BOLD, this.workerID, ConsoleColors.RESET));
         } catch(IOException e) {
-            System.err.println(e);
+
         }
     }
 }
