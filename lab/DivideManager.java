@@ -25,14 +25,6 @@ public class DivideManager implements Serializable {
         this.fileSize = fileSize;
     }
 
-    public long getBytesDownloaded(){
-        long bytesDownloaded = 0;
-        for (ChunkBytes chunk : chunks){
-            bytesDownloaded += chunk.getBytesDownloaded();
-        }
-        return bytesDownloaded + this.resumedDownloadSize;
-    }
-
     /**
      * The method only used if download not recovered or it is new download.
      * @param workers Maximum number of concurrent HTTP connections.
@@ -109,6 +101,19 @@ public class DivideManager implements Serializable {
             }
         }
         chunks = newChunks;
+    }
+
+
+    /**
+     * Get total bytes downloaded from all chunks
+     * @return Total bytes downloaded
+     */
+    public long getBytesDownloaded(){
+        long bytesDownloaded = 0;
+        for (ChunkBytes chunk : chunks){
+            bytesDownloaded += chunk.getBytesDownloaded();
+        }
+        return bytesDownloaded + this.resumedDownloadSize;
     }
 
     /**
