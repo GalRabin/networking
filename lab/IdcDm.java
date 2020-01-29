@@ -58,7 +58,6 @@ public class IdcDm {
         // Serialized object if corrupted recover file or download performed for the first time
         if (divider == null) {
             divider = new DivideManager(fileSize);
-            Helpers.serializeDivideManager(divider, serialFileName);
             divider.divide(workers, mirrors);
             Helpers.serializeDivideManager(divider, serialFileName);
         }
