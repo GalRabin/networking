@@ -9,7 +9,7 @@ import java.util.concurrent.Executors;
 
 public class IdcDm {
     // Variable define when to use only one worker - 1 MB
-    private static int LOWSIZE = 1000000;
+    private static int LOWSIZE = 10000000;
 
     public static void main(String[] args) {
         // Start timer for program running time
@@ -113,11 +113,12 @@ public class IdcDm {
         System.out.println(ConsoleColors.GREEN_BOLD + "Download succeeded" + ConsoleColors.RESET + "\n");
 
         // Close random access stream, delete metadata file and get downloaded file MD5 checksum
-        String md5_checkSum = null;
+//        String md5_checkSum = null;
         try {
             downloadedFile.close();
             new File(serialFileName).delete();
-            md5_checkSum = ConsoleColors.RED_BOLD + Helpers.executeCommand("md5 " + new File(fileName).getPath()).split("=")[1].replace(" ", "");;
+//             for debug
+//             md5_checkSum = ConsoleColors.RED_BOLD + Helpers.executeCommand("md5 " + new File(fileName).getPath()).split("=")[1].replace(" ", "");;
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -130,10 +131,10 @@ public class IdcDm {
         System.out.println("Original file size: " + ConsoleColors.RED_BOLD + fileSize + " Bytes" + ConsoleColors.RESET);
         System.out.println("Difference in file size: " + ConsoleColors.RED_BOLD + (fileSize - divider.getBytesDownloaded()) + " Bytes" + ConsoleColors.RESET);
 
-        // Prints md5 if succeed to get it by cmd
-        if (md5_checkSum != null){
-            System.out.println("MD5 checksum of Downloaded file: " + ConsoleColors.RED_BOLD + md5_checkSum + ConsoleColors.RESET);
-        }
+//        Prints md5 if succeed to get it by cmd - debug only
+//        if (md5_checkSum != null){
+//            System.out.println("MD5 checksum of Downloaded file: " + ConsoleColors.RED_BOLD + md5_checkSum + ConsoleColors.RESET);
+//        }
 
 
     }
