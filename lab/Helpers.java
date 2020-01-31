@@ -1,6 +1,7 @@
 package lab;
 
 import java.io.*;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
 import java.nio.file.Files;
@@ -57,6 +58,22 @@ public class Helpers {
         }
     }
 
+    /**
+     * Check Internet connection by check google availability
+     * @return true if internet connection available
+     */
+    public static boolean netIsAvailable() {
+        try {
+            final URL url = new URL("http://www.google.com");
+            final URLConnection conn = url.openConnection();
+            conn.connect();
+            conn.getInputStream().close();
+            return true;
+        } catch (IOException e) {
+            return false;
+        }
+    }
+
 
     /**
      * Execute command if possible if not return null
@@ -90,7 +107,8 @@ public class Helpers {
             urlConnection.connect();
             file_size = urlConnection.getContentLengthLong();
         } catch (IOException e) {
-            System.err.println(e);
+            System.err.println(ConsoleColors.RED_BOLD + "Aborting download due to internet connection - Could be related to firewall..." + ConsoleColors.RESET);
+            System.exit(1);
         }
         return file_size;
     }

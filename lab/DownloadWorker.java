@@ -1,5 +1,6 @@
 package lab;
 
+import javax.net.ssl.SSLHandshakeException;
 import java.io.*;
 import java.net.HttpURLConnection;
 import java.net.URL;
@@ -37,6 +38,7 @@ public class DownloadWorker implements Runnable {
             HttpURLConnection urlConnection = (HttpURLConnection) new URL(chunk.getMirror()).openConnection();
             String bytesRange = String.format("Bytes=%d-%d", this.chunk.getStartByte(), this.chunk.getEndByte());
             urlConnection.setRequestProperty("Range", bytesRange);
+            urlConnection.setConnectTimeout(5000);
             urlConnection.connect();
 
             //open the input buffer stream
@@ -44,6 +46,7 @@ public class DownloadWorker implements Runnable {
             BufferedInputStream bufferedInputStream = new BufferedInputStream(inputStream);
             // Write to file and read from buffer until no data available in buffer
             while (true) {
+                // Check Internet connection and valid url for download
                 byte[] buffer = new byte[BUFFER_SIZE];
                 int buffer_len = bufferedInputStream.read(buffer);
                 if (buffer_len == -1) {
@@ -56,7 +59,8 @@ public class DownloadWorker implements Runnable {
             bufferedInputStream.close();
             System.out.println(String.format("%s[%d] Finished downloading%s", ConsoleColors.GREEN_BOLD, this.workerID, ConsoleColors.RESET));
         } catch(IOException e) {
-
+            System.out.println(String.format("%s[%d] interrupted downloading%s", ConsoleColors.RED_BOLD, this.workerID, ConsoleColors.RESET));
+            System.exit(1);
         }
     }
 }

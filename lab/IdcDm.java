@@ -2,6 +2,7 @@ package lab;
 
 import java.io.*;
 import java.util.ArrayList;
+import java.util.Hashtable;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -30,6 +31,13 @@ public class IdcDm {
             }
         } catch (Exception e) {
             System.err.println("Please enter valid command: IdcDM <file with mirrors or urls> <Number of concurrent http> - aborting please check permissions !!!\"");
+            System.exit(1);
+        }
+
+        // Check Internet connection and valid url for download
+        boolean internetStatus = Helpers.netIsAvailable();
+        if (!internetStatus){
+            System.err.println(ConsoleColors.RED_BOLD + "No internet connection - Aborting" + ConsoleColors.RESET);
             System.exit(1);
         }
 
@@ -91,7 +99,7 @@ public class IdcDm {
         boolean poolState = pool.isTerminated();
         while (!poolState) {
             int percentage = divider.getPercentage();
-            if (percentage != -1) {
+            if (percentage != -1 && percentage != 0) {
                 System.out.println("Downloaded " + ConsoleColors.BLUE_BOLD + percentage + "%" + ConsoleColors.RESET);
                 // Rewrite divider object to tmp file - its located here because the user seen last percent here
                 Helpers.serializeDivideManager(divider, serialFileName);
